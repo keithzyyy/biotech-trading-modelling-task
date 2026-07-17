@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Event-Study Modelling — Trial Announcements</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --ink:#0B1220;
+  --panel:#111B2E;
+  --panel-2:#16223A;
+  --line:rgba(236,233,223,0.10);
+  --paper:#F4F0E4;
+  --paper-dim:#E7E1D0;
+  --teal:#33AC90;
+  --teal-dim:#1F6E5C;
+  --gold:#D9A441;
+  --coral:#E2695C;
+  --text:#ECE9DF;
+  --text-dim:#9AA3B7;
+  --text-faint:#5C6478;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+body{
+  background:var(--ink);
+  color:var(--text);
+  font-family:'Inter',sans-serif;
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+.mono{font-family:'JetBrains Mono',monospace;}
+.serif{font-family:'Fraunces',serif;}
+
+/* ===== Layout shell ===== */
+.shell{max-width:1180px; margin:0 auto; padding:0 28px 90px;}
+header.top{
+  padding:38px 28px 26px; max-width:1180px; margin:0 auto;
+  display:flex; justify-content:space-between; align-items:flex-end; gap:24px;
+  border-bottom:1px solid var(--line);
+}
+.brand-eyebrow{
+  font-family:'JetBrains Mono',monospace; font-size:11.5px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--gold); margin-bottom:10px;
+}
+h1.title{
+  font-family:'Fraunces',serif; font-weight:500; font-size:clamp(28px,4vw,42px);
+  color:var(--paper); line-height:1.08; max-width:640px;
+}
+.top-meta{font-size:12.5px; color:var(--text-faint); text-align:right; line-height:1.7; font-family:'JetBrains Mono',monospace;}
+.top-meta b{color:var(--text-dim); font-weight:500;}
+
+/* ===== Tabs ===== */
+nav.tabs{
+  position:sticky; top:0; z-index:50; background:rgba(11,18,32,0.92); backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--line);
+}
+.tabs-inner{
+  max-width:1180px; margin:0 auto; padding:0 28px; display:flex; gap:2px; overflow-x:auto;
+}
+.tab-btn{
+  background:none; border:none; color:var(--text-faint); font-family:'Inter',sans-serif;
+  font-size:14px; font-weight:600; padding:16px 18px 14px; cursor:pointer; white-space:nowrap;
+  border-bottom:2px solid transparent; transition:color .15s, border-color .15s; letter-spacing:.01em;
+}
+.tab-btn .num{font-family:'JetBrains Mono',monospace; font-weight:500; color:var(--text-faint); margin-right:8px; font-size:12px;}
+.tab-btn:hover{color:var(--paper);}
+.tab-btn.active{color:var(--paper); border-bottom-color:var(--teal);}
+.tab-btn.active .num{color:var(--teal);}
+
+.panel{display:none; padding-top:44px; animation:fade .35s ease;}
+.panel.active{display:block;}
+@keyframes fade{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+
+.section-label{
+  font-family:'JetBrains Mono',monospace; font-size:11.5px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--teal); margin-bottom:10px;
+}
+h2.section-title{font-family:'Fraunces',serif; font-weight:500; font-size:clamp(22px,3vw,30px); color:var(--paper); margin-bottom:16px; max-width:720px;}
+p.lede{color:var(--text-dim); max-width:680px; font-size:15px; margin-bottom:8px;}
+
+/* ===== Cards / grid ===== */
+.grid{display:grid; gap:16px;}
+.g4{grid-template-columns:repeat(4,1fr);}
+.g3{grid-template-columns:repeat(3,1fr);}
+.g2{grid-template-columns:repeat(2,1fr);}
+@media(max-width:900px){.g4{grid-template-columns:repeat(2,1fr);} .g3{grid-template-columns:1fr 1fr;} .g2{grid-template-columns:1fr;}}
+@media(max-width:600px){.g4{grid-template-columns:1fr;} .g3{grid-template-columns:1fr;}}
+
+.card{
+  background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:20px;
+}
+.stat-card .num{font-family:'Fraunces',serif; font-size:32px; color:var(--paper); font-weight:500;}
+.stat-card .label{font-size:12.5px; color:var(--text-faint); margin-top:4px;}
+.stat-card{border-left:2px solid var(--teal);}
+
+.callout{
+  background:var(--panel-2); border:1px solid var(--line); border-left:3px solid var(--gold);
+  border-radius:8px; padding:16px 18px; font-size:14px; color:var(--text-dim); margin:18px 0;
+}
+.callout b{color:var(--paper);}
+.callout.coral{border-left-color:var(--coral);}
+.callout.teal{border-left-color:var(--teal);}
+
+/* ===== Hero timeline ===== */
+.hero-wrap{margin:26px 0 10px; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:26px 22px 18px; overflow-x:auto;}
+.hero-wrap svg{display:block; margin:0 auto;}
+
+/* ===== Funnel ===== */
+.funnel{display:flex; gap:14px; align-items:stretch; margin-top:22px; flex-wrap:wrap;}
+.funnel-step{
+  flex:1; min-width:150px; background:var(--panel); border:1px solid var(--line); border-radius:10px;
+  padding:18px 16px; cursor:pointer; transition:border-color .15s, background .15s; position:relative;
+}
+.funnel-step:hover, .funnel-step.active{border-color:var(--teal); background:var(--panel-2);}
+.funnel-step .n{font-family:'Fraunces',serif; font-size:28px; color:var(--paper);}
+.funnel-step .t{font-size:12.5px; color:var(--text-faint); margin-top:4px;}
+.funnel-arrow{align-self:center; color:var(--text-faint); font-size:20px; padding:0 2px;}
+.funnel-detail{
+  margin-top:16px; background:var(--panel-2); border:1px solid var(--line); border-radius:10px;
+  padding:18px 20px; font-size:14px; color:var(--text-dim); min-height:64px;
+}
+.funnel-detail b{color:var(--gold);}
+
+/* ===== Toggle buttons ===== */
+.toggle-row{display:flex; gap:8px; margin:18px 0 6px; flex-wrap:wrap;}
+.toggle-btn{
+  background:var(--panel); border:1px solid var(--line); color:var(--text-dim); font-family:'Inter',sans-serif;
+  font-size:13px; font-weight:600; padding:9px 16px; border-radius:20px; cursor:pointer; transition:.15s;
+}
+.toggle-btn:hover{border-color:var(--text-dim);}
+.toggle-btn.active{background:var(--teal); border-color:var(--teal); color:#08130F;}
+
+/* chart container */
+.chart-box{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:20px; margin-top:14px;}
+.chart-box canvas{max-height:340px;}
+.chart-title{font-size:13px; color:var(--text-dim); font-weight:600; margin-bottom:12px;}
+
+/* table */
+table.data-tbl{width:100%; border-collapse:collapse; font-size:13.5px;}
+table.data-tbl th{text-align:left; color:var(--text-faint); font-weight:600; font-size:11.5px; text-transform:uppercase; letter-spacing:.06em; padding:8px 10px; border-bottom:1px solid var(--line);}
+table.data-tbl td{padding:9px 10px; border-bottom:1px solid var(--line); color:var(--text-dim);}
+table.data-tbl tr:last-child td{border-bottom:none;}
+table.data-tbl td.mono{font-family:'JetBrains Mono',monospace; color:var(--paper);}
+
+/* flow example */
+.flow-example{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:16px;}
+.flow-node{background:var(--panel-2); border:1px solid var(--line); border-radius:8px; padding:10px 14px; font-size:12.5px; color:var(--text-dim); text-align:center;}
+.flow-node.hit{border-color:var(--teal); color:var(--paper);}
+.flow-node .k{font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--text-faint); display:block; margin-bottom:3px;}
+.flow-sep{color:var(--text-faint); font-size:16px;}
+
+/* leakage ruler */
+.ruler-legend{display:flex; gap:18px; flex-wrap:wrap; margin-top:14px; font-size:12.5px; color:var(--text-dim);}
+.ruler-legend span{display:inline-flex; align-items:center; gap:6px;}
+.swatch{width:11px; height:11px; border-radius:3px; display:inline-block;}
+
+/* split bar */
+.split-bar{height:34px; border-radius:6px; overflow:hidden; display:flex; margin-top:20px; border:1px solid var(--line);}
+.split-seg{display:flex; align-items:center; justify-content:center; font-family:'JetBrains Mono',monospace; font-size:11.5px; color:#08130F; font-weight:600;}
+
+/* feature importance tab pills */
+.pill-row{display:flex; gap:8px; margin-bottom:6px;}
+.pill{
+  border:1px solid var(--line); background:var(--panel); color:var(--text-dim); padding:8px 14px;
+  border-radius:8px; font-size:13px; font-weight:600; cursor:pointer;
+}
+.pill.active{background:var(--gold); color:#221708; border-color:var(--gold);}
+
+/* next steps cards */
+.idea-card{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:18px; }
+.idea-card .idx{font-family:'JetBrains Mono',monospace; color:var(--teal); font-size:12px; margin-bottom:8px;}
+.idea-card h4{font-family:'Fraunces',serif; font-weight:500; color:var(--paper); font-size:16.5px; margin-bottom:6px;}
+.idea-card p{font-size:13.5px; color:var(--text-dim);}
+
+footer{max-width:1180px; margin:60px auto 0; padding:22px 28px 0; border-top:1px solid var(--line); font-size:12px; color:var(--text-faint);}
+a.src{color:var(--teal);}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div>
+    <div class="brand-eyebrow">AI Biotech Fund — Internship Modelling Practical</div>
+    <h1 class="title">Predicting the trade around a trial readout</h1>
+  </div>
+  <div class="top-meta">
+    <div><b>Dataset</b> trial_announcements.csv</div>
+    <div><b>Rows</b> 853 announcements · 340 trials</div>
+    <div><b>Target</b> return, day_pre20 → day_post1</div>
+  </div>
+</header>
+
+<nav class="tabs">
+  <div class="tabs-inner" id="tabBar">
+    <button class="tab-btn active" data-tab="overview"><span class="num">00</span>Overview</button>
+    <button class="tab-btn" data-tab="dataprep"><span class="num">01</span>Data Preparation</button>
+    <button class="tab-btn" data-tab="method"><span class="num">02</span>Target &amp; Validation</button>
+    <button class="tab-btn" data-tab="results"><span class="num">03</span>Results</button>
+    <button class="tab-btn" data-tab="next"><span class="num">04</span>Next Steps</button>
+  </div>
+</nav>
+
+<div class="shell">
+
+<!-- ===================== 00 OVERVIEW ===================== -->
+<section class="panel active" id="panel-overview">
+  <div class="section-label">The brief</div>
+  <h2 class="section-title">Does a trial-readout stock actually move predictably in the pre-announcement window?</h2>
+  <p class="lede">Each row of the dataset is a single announcement for a biotech trial — an interim or full readout — with daily stock prices from 180 trading days before to 180 after. The practical asks: using only information available <i>before</i> the announcement, can a model learn to price the move from 20 days before the event to 1 day after it?</p>
+
+  <div class="hero-wrap">
+    <svg id="heroTimeline" width="1080" height="150" viewBox="0 0 1080 150"></svg>
+  </div>
+  <p style="font-size:12.5px; color:var(--text-faint); text-align:center; margin-top:2px;">The event-study window used to build the model — explored in full under <b style="color:var(--text-dim)">02 Target &amp; Validation</b>.</p>
+
+  <div class="grid g4" style="margin-top:34px;">
+    <div class="card stat-card"><div class="num">853</div><div class="label">announcement rows across 340 unique trials</div></div>
+    <div class="card stat-card"><div class="num">559</div><div class="label">rows retained for modelling after cleaning</div></div>
+    <div class="card stat-card"><div class="num">361</div><div class="label">daily stock-price fields, pre180 → post180</div></div>
+    <div class="card stat-card"><div class="num">3</div><div class="label">candidate models compared under expanding-window CV</div></div>
+  </div>
+
+  <div class="callout" style="margin-top:30px;">
+    <b>How this app is organised</b> — it follows the practical's own four parts. <b style="color:var(--paper)">01</b> cleans the data and engineers the interim-readout flags. <b style="color:var(--paper)">02</b> defines the return target and the no-lookahead, chronological validation scheme. <b style="color:var(--paper)">03</b> compares three models and their feature importances. <b style="color:var(--paper)">04</b> proposes what to build next. Click through the tabs above, or the cards below.
+  </div>
+</section>
+
+<!-- ===================== 01 DATA PREP ===================== -->
+<section class="panel" id="panel-dataprep">
+  <div class="section-label">Part 1</div>
+  <h2 class="section-title">From 853 raw rows to a modelling table</h2>
+  <p class="lede">Three judgment calls shape the cleaned dataset: which announcement types to keep, how to handle 361 price columns with patchy history, and how to engineer the two interim-readout flags the brief asks for. Click a stage below.</p>
+
+  <div class="funnel" id="funnel">
+    <div class="funnel-step active" data-step="0"><div class="n">853</div><div class="t">raw announcement rows</div></div>
+    <div class="funnel-arrow">→</div>
+    <div class="funnel-step" data-step="1"><div class="n">580</div><div class="t">Interim/Full only, no missing prices</div></div>
+    <div class="funnel-arrow">→</div>
+    <div class="funnel-step" data-step="2"><div class="n">559</div><div class="t">complete meanroll &amp; phase</div></div>
+  </div>
+  <div class="funnel-detail" id="funnelDetail"></div>
+
+  <div class="grid g2" style="margin-top:34px; align-items:start;">
+    <div>
+      <div class="chart-box">
+        <div class="chart-title">Announcement type — all 853 rows</div>
+        <canvas id="typeChart"></canvas>
+      </div>
+      <p style="font-size:12.5px; color:var(--text-faint); margin-top:10px;">Every announcement <i>not</i> made on an active trading day has an undefined outcome — 75 of the 76 non-trading-day rows carry no <span class="mono">type_of_result</span> at all, so they're dropped before modelling.</p>
+    </div>
+    <div>
+      <div class="chart-box">
+        <div class="chart-title">Missing values by field — non-price columns</div>
+        <canvas id="missingChart"></canvas>
+      </div>
+      <p style="font-size:12.5px; color:var(--text-faint); margin-top:10px;"><span class="mono">outcome</span> is dropped entirely — it's the trial result itself, which is unknown before the announcement and would leak the label. <span class="mono">terms</span> is also dropped here, though it's flagged in Part 4 as a candidate for text embeddings.</p>
+    </div>
+  </div>
+
+  <h3 class="serif" style="font-size:19px; color:var(--paper); font-weight:500; margin:38px 0 10px;">Engineering the interim-readout flags</h3>
+  <p class="lede">For every <span class="mono">Full</span> readout, the notebook looks backward for an earlier <span class="mono">Interim</span> result on the same trial and sets two flags accordingly. Toggle between the two outcomes below to see the logic.</p>
+  <div class="toggle-row">
+    <button class="toggle-btn active" data-flag="pos">Earlier interim was positive</button>
+    <button class="toggle-btn" data-flag="neg">Earlier interim showed lack of efficacy</button>
+    <button class="toggle-btn" data-flag="none">No earlier interim result</button>
+  </div>
+  <div class="flow-example" id="flagFlow"></div>
+
+  <div class="grid g3" style="margin-top:30px;">
+    <div class="card"><div style="font-family:'Fraunces',serif; font-size:22px; color:var(--paper);">93 / 45 / 3 / 3</div><div style="font-size:12.5px; color:var(--text-faint); margin-top:6px;">Full-readout rows by flag combo: neither flag, early-positive only, early-lack-efficacy only, and both — out of 144 Full rows with a defined combination.</div></div>
+    <div class="card"><div style="font-family:'Fraunces',serif; font-size:22px; color:var(--paper);">415</div><div style="font-size:12.5px; color:var(--text-faint); margin-top:6px;">Interim rows — flags are structurally undefined here, then imputed to <span class="mono">FALSE</span> before modelling.</div></div>
+    <div class="card"><div style="font-family:'Fraunces',serif; font-size:22px; color:var(--paper);">134 vs 559</div><div style="font-size:12.5px; color:var(--text-faint); margin-top:6px;">Rows if only Full readouts were kept, versus the combined Interim+Full table actually used — the reason for the broader inclusion choice.</div></div>
+  </div>
+</section>
+
+<!-- ===================== 02 METHOD ===================== -->
+<section class="panel" id="panel-method">
+  <div class="section-label">Part 2</div>
+  <h2 class="section-title">Defining the target without letting the model see the future</h2>
+  <p class="lede">The target simulates a trade: enter 20 days before the announcement, exit 1 day after.</p>
+  <div class="callout teal mono" style="font-size:15px; text-align:center;">return&nbsp; = &nbsp;( day_post1 − day_pre20 ) &nbsp;/&nbsp; day_pre20</div>
+
+  <h3 class="serif" style="font-size:19px; color:var(--paper); font-weight:500; margin:30px 0 8px;">Which days are safe to use as features?</h3>
+  <p class="lede">Anything from the entry day onward — including the announcement itself — would leak information the trade doesn't have yet. Toggle the view below.</p>
+  <div class="toggle-row">
+    <button class="toggle-btn active" data-ruler="leak">Show usable vs. leaky days</button>
+    <button class="toggle-btn" data-ruler="plain">Show raw announcement window</button>
+  </div>
+  <div class="hero-wrap">
+    <svg id="leakRuler" width="1080" height="150" viewBox="0 0 1080 150"></svg>
+  </div>
+  <div class="ruler-legend" id="rulerLegend"></div>
+
+  <h3 class="serif" style="font-size:19px; color:var(--paper); font-weight:500; margin:38px 0 8px;">Chronological, expanding-window validation</h3>
+  <p class="lede">Rows are sorted by <span class="mono">event_date</span>, not shuffled. The first 65% train an initial model; from there the model walks forward one announcement at a time — predict the next event, then fold it into training before predicting the one after that.</p>
+  <div class="split-bar">
+    <div class="split-seg" style="width:65%; background:var(--teal);">363 rows · initial training window (65%)</div>
+    <div class="split-seg" style="width:35%; background:var(--gold);">196 walk-forward test steps</div>
+  </div>
+  <p style="font-size:12.5px; color:var(--text-faint); margin-top:10px;">This mirrors how the strategy would actually be deployed — every prediction uses only announcements dated before it, and the training set grows with each step rather than staying fixed.</p>
+
+  <div class="callout coral" style="margin-top:26px;">
+    <b>Feature ceiling:</b> only <span class="mono">day_pre180 … day_pre21</span> are usable as raw price history. <span class="mono">day_pre20</span> and <span class="mono">day_post1</span> are consumed to build the target itself, and everything from <span class="mono">day_pre19</span> through <span class="mono">day_post180</span> — including the outcome-bearing announcement day — happens at or after the point the trade has already been entered.
+  </div>
+</section>
+
+<!-- ===================== 03 RESULTS ===================== -->
+<section class="panel" id="panel-results">
+  <div class="section-label">Part 3</div>
+  <h2 class="section-title">Three models, walked forward across 196 announcements</h2>
+  <p class="lede">Each model was retrained at every step of the expanding window and scored against the announcement it hadn't seen yet. <span class="mono">RMSE</span> is on the return scale (0.10 ≈ a 10-point error in percentage return); <span class="mono">R²</span> is measured against always predicting the mean return.</p>
+
+  <div class="toggle-row">
+    <button class="toggle-btn active" data-metric="rmse">RMSE (lower is better)</button>
+    <button class="toggle-btn" data-metric="r2">R² (higher is better)</button>
+  </div>
+  <div class="chart-box">
+    <canvas id="modelChart"></canvas>
+  </div>
+
+  <div class="grid g3" style="margin-top:18px;">
+    <div class="card"><h4 class="serif" style="color:var(--paper); font-size:15.5px; font-weight:500;">Model 1 · Raw prices</h4><p style="font-size:13px; color:var(--text-dim); margin-top:6px;">160 raw <span class="mono">day_pre</span> price columns only. No dimensionality reduction, no trial metadata.</p></div>
+    <div class="card"><h4 class="serif" style="color:var(--paper); font-size:15.5px; font-weight:500;">Model 2 · PLS prices</h4><p style="font-size:13px; color:var(--text-dim); margin-top:6px;">Same price history, projected onto 3 PLS components against the return target.</p></div>
+    <div class="card"><h4 class="serif" style="color:var(--paper); font-size:15.5px; font-weight:500;">Model 3 · PLS + metadata</h4><p style="font-size:13px; color:var(--text-dim); margin-top:6px;">Model 2's components plus <span class="mono">meanroll</span>, <span class="mono">phase</span>, <span class="mono">is_full</span> and the interim-readout flags.</p></div>
+  </div>
+
+  <div class="callout">
+    <b>Reading the comparison:</b> compressing the price history into 3 PLS components (Model 2) clearly beats using all 160 raw price columns (Model 1) — Model 1's negative R² means it does worse than just predicting the average return every time. Adding trial metadata on top (Model 3) makes RMSE <i>slightly worse</i> than Model 2 alone, which the notebook attributes to redundant or noisy categorical features rather than genuine signal loss.
+  </div>
+
+  <h3 class="serif" style="font-size:19px; color:var(--paper); font-weight:500; margin:36px 0 10px;">Average feature importance</h3>
+  <div class="pill-row">
+    <button class="pill active" data-fi="1">Model 1</button>
+    <button class="pill" data-fi="2">Model 2</button>
+    <button class="pill" data-fi="3">Model 3</button>
+  </div>
+  <div class="chart-box">
+    <canvas id="fiChart"></canvas>
+  </div>
+  <p style="font-size:12.5px; color:var(--text-faint); margin-top:10px;" id="fiCaption"></p>
+
+  <div class="callout teal" style="margin-top:22px;">
+    <b>The standout signal:</b> in Model 3, <span class="mono">meanroll</span> — TrialKey's own predicted probability of trial success — is the single most important non-price feature, sitting just behind the three PLS price components and ahead of every categorical trial-metadata field.
+  </div>
+</section>
+
+<!-- ===================== 04 NEXT STEPS ===================== -->
+<section class="panel" id="panel-next">
+  <div class="section-label">Part 4</div>
+  <h2 class="section-title">What would move the needle next</h2>
+  <p class="lede">The practical doesn't require implementing these — just identifying them from what the data and the results above expose.</p>
+
+  <div class="grid g3">
+    <div class="idea-card"><div class="idx">01</div><h4>Time-series features over PCA/PLS</h4><p>Rolling means, momentum, and realised volatility on <span class="mono">day_pre180…pre21</span> would likely carry more signal than dimensionality reduction on the raw daily levels, which mostly compresses autocorrelation rather than extracting predictive structure.</p></div>
+    <div class="idea-card"><div class="idx">02</div><h4>Feature selection on metadata</h4><p>Since Model 3 underperformed Model 2, testing which categorical fields (<span class="mono">phase</span>, the interim flags) actually earn their place — versus dropping or re-encoding them — could recover the metadata's value without the noise.</p></div>
+    <div class="idea-card"><div class="idx">03</div><h4>Embeddings from <span class="mono">terms</span></h4><p>The dropped condition/protocol text field could be encoded (e.g. via a small language embedding) to capture disease-area or trial-design effects that <span class="mono">phase</span> and <span class="mono">meanroll</span> don't.</p></div>
+    <div class="idea-card"><div class="idx">04</div><h4>Explain the missing-price pattern</h4><p>Missing stock prices aren't uniform across companies — worth checking if they align with trading-day-of-week gaps, delistings, or thin-float names, since that could itself be a liquidity signal.</p></div>
+    <div class="idea-card"><div class="idx">05</div><h4>Sector/peer-relative return</h4><p>Framing the target as return relative to a biotech index or peer basket, rather than absolute return, could strip out market-wide moves unrelated to the trial itself.</p></div>
+    <div class="idea-card"><div class="idx">06</div><h4>Interaction: <span class="mono">meanroll</span> × phase</h4><p>TrialKey's score likely means something different in Phase 1 versus Phase 3 — an interaction term could let the model use <span class="mono">meanroll</span> more precisely instead of as a flat linear effect.</p></div>
+  </div>
+</section>
+
+</div>
+
+<footer>
+  Built from the internship's <span class="mono">modelling.ipynb</span> notebook and its results output — all figures above (row counts, RMSE/R², feature importances) are taken directly from the notebook's own computed cells, not re-estimated.
+</footer>
+
+<script>
+const COLORS = {teal:'#33AC90', tealDim:'#1F6E5C', gold:'#D9A441', coral:'#E2695C', paper:'#F4F0E4', dim:'#9AA3B7', faint:'#5C6478', line:'rgba(236,233,223,0.12)'};
+Chart.defaults.font.family = "'Inter',sans-serif";
+Chart.defaults.color = COLORS.dim;
+Chart.defaults.font.size = 12;
+
+/* ---------- tabs ---------- */
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
+    window.scrollTo({top:0, behavior:'instant'});
+  });
+});
+
+/* ---------- timeline ruler drawer (shared) ---------- */
+function drawRuler(svgEl, mode){
+  const w=1080, h=150;
+  svgEl.innerHTML='';
+  const ns='http://www.w3.org/2000/svg';
+  function rect(x,y,rw,rh,fill,opacity=1){
+    const r=document.createElementNS(ns,'rect');
+    r.setAttribute('x',x); r.setAttribute('y',y); r.setAttribute('width',rw); r.setAttribute('height',rh);
+    r.setAttribute('rx',3); r.setAttribute('fill',fill); r.setAttribute('opacity',opacity);
+    svgEl.appendChild(r); return r;
+  }
+  function text(x,y,str,opts={}){
+    const t=document.createElementNS(ns,'text');
+    t.setAttribute('x',x); t.setAttribute('y',y);
+    t.setAttribute('fill',opts.fill||COLORS.dim);
+    t.setAttribute('font-size',opts.size||11);
+    t.setAttribute('font-family',opts.mono?"'JetBrains Mono',monospace":"'Inter',sans-serif");
+    t.setAttribute('font-weight',opts.weight||400);
+    t.setAttribute('text-anchor',opts.anchor||'middle');
+    t.textContent=str;
+    svgEl.appendChild(t); return t;
+  }
+  function line(x1,y1,x2,y2,stroke,dash){
+    const l=document.createElementNS(ns,'line');
+    l.setAttribute('x1',x1); l.setAttribute('y1',y1); l.setAttribute('x2',x2); l.setAttribute('y2',y2);
+    l.setAttribute('stroke',stroke); l.setAttribute('stroke-width',1);
+    if(dash) l.setAttribute('stroke-dasharray',dash);
+    svgEl.appendChild(l);
+  }
+
+  const barY=78, barH=26;
+  const left=40, right=1040, span=right-left; // total width for pre180..post180 (361 slots conceptually)
+  // segments as fraction of full pre180->post180 range (361 units)
+  const total=361;
+  function frac(days){return days/total;}
+
+  // segment boundaries in "day index" terms from left(pre180) to right(post180)
+  // pre180(0) ... pre21(159) | pre20(160) | pre19(161)...pre1(179) | post0(180) | post1(181) | post2(182)...post180(360)
+  const segs = mode==='leak' ? [
+    {from:0, to:160, color:COLORS.teal, label:'features used'},
+    {from:160, to:161, color:COLORS.gold, label:'entry'},
+    {from:161, to:180, color:COLORS.coral, opacity:0.55, label:'excluded'},
+    {from:180, to:181, color:COLORS.coral, label:'announcement'},
+    {from:181, to:182, color:COLORS.gold, label:'exit'},
+    {from:182, to:361, color:COLORS.coral, opacity:0.35, label:'excluded'},
+  ] : [
+    {from:0, to:180, color:COLORS.tealDim, label:'pre-announcement'},
+    {from:180, to:181, color:COLORS.coral, label:'announcement'},
+    {from:181, to:361, color:COLORS.tealDim, opacity:0.6, label:'post-announcement'},
+  ];
+
+  segs.forEach(s=>{
+    const x=left+frac(s.from)*span, w=frac(s.to-s.from)*span;
+    rect(x,barY,w,barH,s.color, s.opacity!==undefined?s.opacity:1);
+  });
+
+  // axis labels — single-line, with lane-based collision avoidance for closely spaced ticks
+  const marks = mode==='leak'
+    ? [{d:0,l:'pre180'},{d:159,l:'pre21'},{d:160,l:'pre20 (entry)'},{d:180,l:'post0 (announce)'},{d:181,l:'post1 (exit)'},{d:360,l:'post180'}]
+    : [{d:0,l:'pre180'},{d:90,l:'pre90'},{d:180,l:'post0 (announce)'},{d:270,l:'post90'},{d:360,l:'post180'}];
+
+  const MIN_PX=95;
+  marks.forEach(m=>{ m.x = left+frac(m.d)*span; });
+  marks.forEach((m,i)=>{
+    if(i===0){ m.side='below'; return; }
+    const prev = marks[i-1];
+    m.side = (m.x - prev.x < MIN_PX) ? (prev.side==='below' ? 'above' : 'below') : 'below';
+  });
+
+  function splitLabel(l){
+    const idx = l.indexOf('(');
+    return idx>-1 ? [l.slice(0,idx).trim(), l.slice(idx)] : [l];
+  }
+
+  marks.forEach(m=>{
+    const anchor = m.d===0 ? 'start' : (m.d>=total-1 ? 'end' : 'middle');
+    const lns = splitLabel(m.l);
+    if(m.side==='below'){
+      line(m.x, barY+barH, m.x, barY+barH+8, 'rgba(236,233,223,0.35)');
+      lns.forEach((ln,i)=> text(m.x, barY+barH+21+i*13, ln, {size:10.5, mono:true, fill:COLORS.faint, anchor}));
+    } else {
+      line(m.x, barY, m.x, barY-8, 'rgba(236,233,223,0.35)');
+      const n=lns.length;
+      lns.forEach((ln,i)=> text(m.x, barY-13-(n-1-i)*13, ln, {size:10.5, mono:true, fill:COLORS.faint, anchor}));
+    }
+  });
+
+  // top caption
+  text(left, 26, mode==='leak' ? 'Usable window vs. leaky window' : 'Full announcement window (raw)', {anchor:'start', size:13, weight:600, fill:COLORS.paper});
+  text(right, 26, '361 trading days total', {anchor:'end', size:11, fill:COLORS.faint, mono:true});
+}
+drawRuler(document.getElementById('heroTimeline'), 'leak');
+let leakMode='leak';
+drawRuler(document.getElementById('leakRuler'), leakMode);
+
+function renderLegend(){
+  const el=document.getElementById('rulerLegend');
+  if(leakMode==='leak'){
+    el.innerHTML = `
+      <span><span class="swatch" style="background:${COLORS.teal}"></span>usable features (day_pre180…pre21)</span>
+      <span><span class="swatch" style="background:${COLORS.gold}"></span>entry / exit points (define the target)</span>
+      <span><span class="swatch" style="background:${COLORS.coral}"></span>excluded — leaks the future or the outcome</span>`;
+  } else {
+    el.innerHTML = `
+      <span><span class="swatch" style="background:${COLORS.tealDim}"></span>pre-announcement history</span>
+      <span><span class="swatch" style="background:${COLORS.coral}"></span>announcement day</span>
+      <span><span class="swatch" style="background:${COLORS.tealDim}; opacity:.6"></span>post-announcement history</span>`;
+  }
+}
+renderLegend();
+
+document.querySelectorAll('[data-ruler]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('[data-ruler]').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    leakMode = btn.dataset.ruler;
+    drawRuler(document.getElementById('leakRuler'), leakMode);
+    renderLegend();
+  });
+});
+
+/* ---------- funnel ---------- */
+const funnelDetails = [
+  "<b>853 raw rows</b> — every announcement event in the file, across 340 distinct clinical trials (NCT numbers). Rows carry 9 metadata/trial fields plus 361 daily stock-price fields.",
+  "<b>580 rows</b> — kept only <span class='mono'>type_of_result</span> in {Interim, Full} (dropping Additional Data, Follow-up, Pre-clinical, Termination, and undefined non-trading-day rows), then dropped any row with a single missing stock-price field. Imputing missing prices was ruled out — the amount and pattern of missingness looked company-specific, not random.",
+  "<b>559 rows</b> — further dropped rows still missing <span class='mono'>meanroll</span> or <span class='mono'>phase</span>. This is the final modelling table. Keeping Interim results alongside Full ones (559 rows) instead of Full-only (134 rows) roughly <b>4×'s</b> the usable dataset."
+];
+document.querySelectorAll('.funnel-step').forEach(step=>{
+  step.addEventListener('click', ()=>{
+    document.querySelectorAll('.funnel-step').forEach(s=>s.classList.remove('active'));
+    step.classList.add('active');
+    document.getElementById('funnelDetail').innerHTML = funnelDetails[step.dataset.step];
+  });
+});
+document.getElementById('funnelDetail').innerHTML = funnelDetails[0];
+
+/* ---------- type_of_result chart ---------- */
+new Chart(document.getElementById('typeChart'), {
+  type:'bar',
+  data:{
+    labels:['Interim','Full','Additional Data','Pre-clinical','Follow-up','Termination','Undefined\n(non-trading day)'],
+    datasets:[{
+      data:[441,165,69,67,29,7,75],
+      backgroundColor:[COLORS.teal,COLORS.teal,COLORS.faint,COLORS.faint,COLORS.faint,COLORS.faint,COLORS.coral],
+      borderRadius:4, barThickness:16
+    }]
+  },
+  options:{
+    indexAxis:'y', responsive:true,
+    plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>c.parsed.x+' rows'}}},
+    scales:{
+      x:{grid:{color:COLORS.line}, ticks:{color:COLORS.dim}},
+      y:{grid:{display:false}, ticks:{color:COLORS.dim, font:{size:11.5}}}
+    }
+  }
+});
+
+/* ---------- missing values chart ---------- */
+new Chart(document.getElementById('missingChart'), {
+  type:'bar',
+  data:{
+    labels:['outcome','type_of_result','terms','meanroll','phase'],
+    datasets:[{
+      data:[174,75,46,29,13],
+      backgroundColor:[COLORS.coral,COLORS.coral,COLORS.gold,COLORS.gold,COLORS.gold],
+      borderRadius:4, barThickness:16
+    }]
+  },
+  options:{
+    indexAxis:'y', responsive:true,
+    plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>c.parsed.x+' of 853 rows missing'}}},
+    scales:{
+      x:{grid:{color:COLORS.line}, ticks:{color:COLORS.dim}},
+      y:{grid:{display:false}, ticks:{color:COLORS.dim, font:{size:11.5}}}
+    }
+  }
+});
+
+/* ---------- flag flow ---------- */
+const flowStates = {
+  pos: [
+    {k:'nct',v:'e.g. NCT03748186', hit:false},
+    {k:'type_of_result',v:'Interim', hit:true},
+    {k:'outcome',v:'Early Positive\nIndication', hit:true},
+    {k:'→ later, Full row',v:'has_early_positive\n= TRUE', hit:true}
+  ],
+  neg: [
+    {k:'nct',v:'same trial', hit:false},
+    {k:'type_of_result',v:'Interim', hit:true},
+    {k:'outcome',v:'Early Lack of\nEfficacy/Safety', hit:true},
+    {k:'→ later, Full row',v:'has_early_lack_efficacy\n= TRUE', hit:true}
+  ],
+  none: [
+    {k:'nct',v:'same trial', hit:false},
+    {k:'type_of_result',v:'no earlier\nInterim row', hit:false},
+    {k:'→ Full row',v:'both flags\n= FALSE', hit:true}
+  ]
+};
+function renderFlow(key){
+  const el=document.getElementById('flagFlow');
+  el.innerHTML='';
+  flowStates[key].forEach((n,i)=>{
+    if(i>0){
+      const sep=document.createElement('span'); sep.className='flow-sep'; sep.textContent='→';
+      el.appendChild(sep);
+    }
+    const node=document.createElement('div');
+    node.className='flow-node'+(n.hit?' hit':'');
+    node.innerHTML=`<span class="k">${n.k}</span>${n.v.replace('\n','<br>')}`;
+    el.appendChild(node);
+  });
+}
+renderFlow('pos');
+document.querySelectorAll('[data-flag]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('[data-flag]').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    renderFlow(btn.dataset.flag);
+  });
+});
+
+/* ---------- model comparison chart ---------- */
+const modelData = {
+  rmse: {vals:[0.5701,0.5380,0.5427], label:'RMSE'},
+  r2:   {vals:[-0.0681,0.0491,0.0322], label:'R²'}
+};
+let modelChart = new Chart(document.getElementById('modelChart'), {
+  type:'bar',
+  data:{
+    labels:['Model 1\nRaw prices','Model 2\nPLS prices','Model 3\nPLS + metadata'],
+    datasets:[{data:modelData.rmse.vals, backgroundColor:[COLORS.coral,COLORS.teal,COLORS.gold], borderRadius:6, barThickness:64}]
+  },
+  options:{
+    responsive:true,
+    plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.parsed.y.toFixed(4)}}},
+    scales:{
+      x:{grid:{display:false}, ticks:{color:COLORS.dim}},
+      y:{grid:{color:COLORS.line}, ticks:{color:COLORS.dim}, title:{display:true, text:'RMSE (return scale)', color:COLORS.faint}}
+    }
+  }
+});
+document.querySelectorAll('[data-metric]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('[data-metric]').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    const m = modelData[btn.dataset.metric];
+    modelChart.data.datasets[0].data = m.vals;
+    modelChart.options.scales.y.title.text = btn.dataset.metric==='rmse' ? 'RMSE (return scale)' : 'R² vs. mean-return baseline';
+    modelChart.update();
+  });
+});
+
+/* ---------- feature importance chart ---------- */
+const fiData = {
+  1:{
+    labels:['day_pre100','day_pre93','day_pre49','day_pre178','day_pre84','… ~155 more price-day features'],
+    vals:[0.0176,0.0159,0.0155,0.0154,0.0148,0.0148],
+    caption:"Model 1 spreads importance thinly across all 160 raw price columns — no single day stands out, which is itself a sign the raw levels aren't giving the model much to latch onto (each of the top 5 days contributes under 2%)."
+  },
+  2:{
+    labels:['PLS component 2','PLS component 1','PLS component 3'],
+    vals:[0.4537,0.2768,0.2695],
+    caption:"With only 3 PLS components, importance concentrates heavily — PLS2 alone accounts for 45% of the model's decisions, versus a near-even split between PLS1 and PLS3."
+  },
+  3:{
+    labels:['PLS component 2','PLS component 1','PLS component 3','meanroll','phase: PHASE1/PHASE2','is_full: False','phase: PHASE2','other metadata (~5.5%)'],
+    vals:[0.3440,0.2113,0.1984,0.1479,0.0182,0.0131,0.0125,0.055],
+    caption:"meanroll — TrialKey's predicted success probability — is the top non-price feature in Model 3, well ahead of any individual phase or readout-type indicator."
+  }
+};
+let fiChart = new Chart(document.getElementById('fiChart'), {
+  type:'bar',
+  data:{labels:fiData[1].labels, datasets:[{data:fiData[1].vals, backgroundColor:COLORS.teal, borderRadius:4, barThickness:16}]},
+  options:{
+    indexAxis:'y', responsive:true,
+    plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>(c.parsed.x*100).toFixed(1)+'%'}}},
+    scales:{
+      x:{grid:{color:COLORS.line}, ticks:{color:COLORS.dim, callback:v=>(v*100).toFixed(0)+'%'}},
+      y:{grid:{display:false}, ticks:{color:COLORS.dim, font:{size:11}}}
+    }
+  }
+});
+document.getElementById('fiCaption').textContent = fiData[1].caption;
+document.querySelectorAll('.pill').forEach(p=>{
+  p.addEventListener('click', ()=>{
+    document.querySelectorAll('.pill').forEach(x=>x.classList.remove('active'));
+    p.classList.add('active');
+    const d = fiData[p.dataset.fi];
+    fiChart.data.labels = d.labels;
+    fiChart.data.datasets[0].data = d.vals;
+    fiChart.data.datasets[0].backgroundColor = p.dataset.fi==='1'?COLORS.coral: p.dataset.fi==='2'?COLORS.teal:COLORS.gold;
+    fiChart.update();
+    document.getElementById('fiCaption').textContent = d.caption;
+  });
+});
+</script>
+</body>
+</html>
